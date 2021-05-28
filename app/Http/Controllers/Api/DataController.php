@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Data;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use League\Csv\Statement;
@@ -32,15 +33,11 @@ class DataController extends Controller
     public function index()
     {
         try {
-            $reader = Reader::createFromPath($this->dataPath, 'r');
-            // $reader->setDelimiter(';');
-            $reader->setHeaderOffset(0);
-            $records = Statement::create()->process($reader);
-            $records->getHeader(); //returns ['First Name', 'Last Name', 'E-mail']
+            $records = Data::getAll();
 
             return $this->success(Response::$statusTexts['200'], $records);
         } catch (\Throwable $th) {
-            // throw $th;
+            throw $th;
             return $this->error(Response::$statusTexts['500']);
         }
     }
@@ -66,14 +63,9 @@ class DataController extends Controller
                 return $this->success(Response::$statusTexts['400'], $validator->errors(), Response::HTTP_BAD_REQUEST);
             }
 
-            $reader = Reader::createFromPath($this->dataPath, 'r');
-            $records = Statement::create()->process($reader);
-            
-            $writer = Writer::createFromPath($this->dataPath);
-            $writer->insertAll($records);
-            $writer->insertOne($request->all()); //will trigger a CannotInsertRecord exception
+            $writer = Data::create($request->all());
 
-            return $this->success(Response::$statusTexts['200'], $writer->getContent());
+            return $this->success(Response::$statusTexts['200'], $writer);
         } catch (\Throwable $th) {
             throw $th;
             return $this->error(Response::$statusTexts['500']);
@@ -102,22 +94,9 @@ class DataController extends Controller
                 return $this->success(Response::$statusTexts['400'], $validator->errors(), Response::HTTP_BAD_REQUEST);
             }
 
-            $reader = Reader::createFromPath($this->dataPath, 'r');
-            $records = Statement::create()->process($reader);
+            $writer = Data::update($request->except('_method'), $id);
 
-            $updatedRecords = [];
-            foreach ($records as $key => $value) {
-                if ($id == $key) {
-                    $updatedRecords[] = array_values($request->except('_method'));
-                } else {
-                    $updatedRecords[] = $value;
-                }
-            }
-            
-            $writer = Writer::createFromPath($this->dataPath);
-            $writer->insertAll($updatedRecords);
-
-            return $this->success(Response::$statusTexts['200'], $writer->getContent());
+            return $this->success(Response::$statusTexts['200'], $writer);
         } catch (\Throwable $th) {
             throw $th;
             return $this->error(Response::$statusTexts['500']);
@@ -133,20 +112,9 @@ class DataController extends Controller
     public function destroy($id)
     {
         try {
-            $reader = Reader::createFromPath($this->dataPath, 'r');
-            $records = Statement::create()->process($reader);
+            $writer = Data::delete($id);
 
-            $updatedRecords = [];
-            foreach ($records as $key => $value) {
-                if ($id != $key) {
-                    $updatedRecords[] = $value;
-                }
-            }
-            
-            $writer = Writer::createFromPath($this->dataPath, 'w+');
-            $writer->insertAll($updatedRecords);
-
-            return $this->success(Response::$statusTexts['200'], $writer->getContent());
+            return $this->success(Response::$statusTexts['200'], $writer);
         } catch (\Throwable $th) {
             throw $th;
             return $this->error(Response::$statusTexts['500']);
