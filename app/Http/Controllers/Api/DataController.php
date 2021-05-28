@@ -43,6 +43,23 @@ class DataController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        try {
+            $records = Data::getOne($id - 1); //subtracting since index starts from 0 
+
+            return $this->success(Response::$statusTexts['200'], $records);
+        } catch (\Throwable $th) {
+            throw $th;
+            return $this->error(Response::$statusTexts['500']);
+        }
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request

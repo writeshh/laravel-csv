@@ -11,13 +11,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Data
 {
 
-    public static function getOne()
+    public static function getOne($index)
     {
         $reader = Reader::createFromPath(storage_path() . '/app/data.csv', 'r');
         $reader->setHeaderOffset(0);
         $records = Statement::create()->process($reader);
 
-        return $records;
+        $data = $records->fetchOne($index);
+
+        return $data;
     }
 
     public static function getAll()
